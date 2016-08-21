@@ -3,7 +3,8 @@
 {% block content %}
   {{ super() }}
 
-  {% set state_eof = True %}
+{% set state_eof = True %}
+<p>{{ line_count }} lines sloc ({{ sloc }}) | size: {{ file_size }} Bytes</p>
 
   {% block bubble %}
     {% if bubble %}

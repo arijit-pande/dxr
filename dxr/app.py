@@ -513,7 +513,9 @@ def _browse_file(tree, path, line_docs, file_doc, config, is_binary,
         # as the default param because that is only evaluated once, so the same
         # time would always be used.
         date = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
-
+    
+    tree_config = config.trees[tree]
+    abs_path = join(tree_config.source_folder, path)
     common = _build_common_file_template(tree, path, is_binary, date, config)
     links = file_doc.get('links', [])
     if is_binary_image(path):
@@ -532,12 +534,20 @@ def _browse_file(tree, path, line_docs, file_doc, config, is_binary,
     else:
         # We concretize the lines into a list because we iterate over it multiple times
         lines = [doc['content'] for doc in line_docs]
-        if not contents:
+	if not contents:
             # If contents are not provided, we can reconstruct them by
             # stitching the lines together.
             contents = ''.join(lines)
-        offsets = build_offset_map(lines)
-        tree_config = config.trees[tree]
+	#prepare file statistics like count of lines, file size and sloc
+
+	line_count = str(len(lines))
+	file_size = str(os.path.getsize(abs_path))
+	sloc = 0
+	for line in lines:
+	    if line.isspace() == False:
+	        sloc = sloc + 1
+
+	offsets = build_offset_map(lines)
         if is_textual_image(path) and image_rev:
             # Add a link to view textual images on revs:
             links.extend(dictify_links([
@@ -573,7 +583,10 @@ def _browse_file(tree, path, line_docs, file_doc, config, is_binary,
                 # Someday, it would be great to stream this and not concretize
                 # the whole thing in RAM. The template will have to quit
                 # looping through the whole thing 3 times.
-                'lines': [(html_line(doc['content'], tags_in_line, offset),
+                'line_count': line_count,
+		'file_size' : file_size,
+		'sloc' : sloc,
+		'lines': [(html_line(doc['content'], tags_in_line, offset),
                            doc.get('annotations', []) + skim_annotations)
                           for doc, tags_in_line, offset, skim_annotations
                               in izip(line_docs, tags_per_line(tags), offsets, annotationses)],
